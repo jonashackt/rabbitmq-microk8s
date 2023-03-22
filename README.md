@@ -81,11 +81,61 @@ You shouldn't override them!
 
 
 
-## Install RabbitMQ
+## Install RabbitMQ cluster operator
 
 We want to check out the RabbitMQ operator:
 
 https://operatorhub.io/operator/rabbitmq-cluster-operator
+
+There's a great quickstart guide covering all the steps we need:
+
+https://www.rabbitmq.com/kubernetes/operator/quickstart-operator.html
+
+
+
+### 0. Install rabbitmq kubectl plugin via krew
+
+Luckily there's a RabbitMQ kubectl plugin which will make working with RabbitMQ on Kubernetes much easier.
+
+To install it we need to have [`krew` - the package manager for kubectl plugins](https://github.com/kubernetes-sigs/krew) in place. If you don't already have it installed, take [the following steps on a Mac](https://krew.sigs.k8s.io/docs/user-guide/setup/install/) (see the [docs for other OSses]https://krew.sigs.k8s.io/docs/user-guide/setup/install/)):
+
+```shell
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  KREW="krew-${OS}_${ARCH}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+  tar zxvf "${KREW}.tar.gz" &&
+  ./"${KREW}" install krew
+)
+```
+
+Then add the following line to your `.bashrc` or `.zshrc`:
+
+```shell
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+```
+
+Now `kubectl krew` should be ready to use!
+
+Finally install the rabbitmq kubectl plugin with:
+
+```shell
+kubectl krew install rabbitmq
+```
+
+
+### 1. Install the RabbitMQ cluster operator Helm
+
+https://www.rabbitmq.com/kubernetes/operator/install-operator.html#helm-chart
+
+```shell
+
+```
+
+
+
 
 There are 3 steps to take:
 
@@ -93,4 +143,18 @@ There are 3 steps to take:
 
 ```shell
 curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.24.0/install.sh | bash -s v0.24.0
+```
+
+### 2. Install the operator
+
+```shell
+kubectl create -f https://operatorhub.io/install/rabbitmq-cluster-operator.yaml
+```
+
+### 3. Watch operator starting up
+
+```shell
+kubectl get csv -n operators
+
+kubectl wait --for=condition=Succeeded pod -l app=tekton-pipelines-controller --namespace default --timeout=120s
 ```
