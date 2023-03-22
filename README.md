@@ -58,6 +58,39 @@ mkdir ~/.kube
 microk8s config > ~/.kube/config
 ```
 
-> If you have already configured other Kubernetes clusters, you should merge the output from the microk8s config with the existing config (copy the output, omitting the first two lines, and paste it onto the end of the existing config using a text editor).
+> If you have already configured other Kubernetes clusters, __you should merge the output from the microk8s config with the existing config__ 
+
+Watch out for existing lines like:
+
+```shell
+apiVersion: v1
+clusters:
+## and
+contexts:
+## and 
+current-context: xyz-cluster
+## and
+kind: Config
+preferences: {}
+users:
+```
+
+You shouldn't override them!
 
 
+
+
+
+## Install RabbitMQ
+
+We want to check out the RabbitMQ operator:
+
+https://operatorhub.io/operator/rabbitmq-cluster-operator
+
+There are 3 steps to take:
+
+### 1. Install Operator Lifecycle Manager (OLM)
+
+```shell
+curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.24.0/install.sh | bash -s v0.24.0
+```
