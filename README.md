@@ -298,6 +298,16 @@ kubectl port-forward "service/hello-rabbit" 15672
 kubectl rabbitmq manage hello-rabbit
 ```
 
+> If you don't want to block your terminal, you can enhance the command by only running it in the background using a trailing `&` like this: `kubectl port-forward "service/hello-rabbit" 15672 &`. Now your terminal remains usable. If you want to stop the port forward though, you need to search for the process id via `ps -eaf | grep port-forward` and kill the second number in the first line like this:
+
+```shell
+ps -eaf | grep port-forward
+  501 86828 27857   0  2:33pm ttys004    0:00.20 kubectl port-forward service/hello-rabbit 15672
+  501 88299 27857   0  2:39pm ttys004    0:00.00 grep --color=auto --exclude-dir=.bzr --exclude-dir=CVS --exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn port-forward
+$ kill 86828
+[1]  + 86828 terminated  kubectl port-forward "service/hello-rabbit" 15672
+```
+
 Finally the management UI should be available to us:
 
 ![rabbitmq-management-ui.png](docs/screenshots/rabbitmq-management-ui.png)
@@ -339,6 +349,56 @@ kubectl delete po perf-test
 
 # or if you used the rabbitmq kubectl command
 kubectl delete job.batch perf-test
+```
+
+
+# Doing it all with GitHub Actions
+
+We simply use https://github.com/marketplace/actions/microk8s-action to get Microk8s installed incl. our needed addons.
+
+See [provision.yml](.github/workflows/provision.yml):
+
+```yaml
+name: provision
+
+on: [push]
+
+jobs:
+  microk8s-rabbitmq:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Install microk8s using actions/microk8s-action
+        uses: balchua/microk8s-actions@v0.3.0
+        with:
+          channel: '1.26/stable'
+          addons: '["dns", "host-access", "hostpath-storage"]'
+
+      - name: Access microk8s
+        run: |
+          echo "Check access to mikrok8s cluster"
+          kubectl get nodes
+      
+      - name: Install RabbitMQ using Helm
+        run: |
+          echo "Install RabbitMQ using our chart with pinned version"
+          helm dependency update rabbitmq/install
+          helm upgrade -i rabbitmq-cluster-operator rabbitmq/install
+
+          echo "Watch operator starting up - wrapped in until to prevent 'error: no matching resources found'"
+          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s; do : ; done
+
+      - name: Install CRDs via Kustomize
+        run: |
+          kubectl apply -k rabbitmq
+
+          echo "Watch RabbitMQ coming up"
+          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=hello-rabbit --namespace default --timeout=120s
+
+
+
 ```
 
 
