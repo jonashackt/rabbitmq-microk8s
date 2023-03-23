@@ -29,13 +29,13 @@ jobs:
           echo "Watch operator starting up - wrapped in until to prevent 'error: no matching resources found'"
           until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s; do : ; done
 
-      - name: Install RabbitMQ
+      - name: "Install RabbitMQ - wrapped in until to prevent 'error: no matching resources found'"
         run: |
           echo "Install CRDs via Kustomize"
           kubectl apply -k rabbitmq
 
           echo "Watch RabbitMQ coming up"
-          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=hello-rabbit --namespace default --timeout=120s
+          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=hello-rabbit --namespace default --timeout=120s; do : ; done
 
       - name: Check if the RabbitMQ management UI is accessible
         run: |
