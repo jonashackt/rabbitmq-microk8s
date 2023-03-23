@@ -128,33 +128,30 @@ kubectl krew install rabbitmq
 
 ### 1. Install the RabbitMQ cluster operator Helm
 
-https://www.rabbitmq.com/kubernetes/operator/install-operator.html#helm-chart
+In the docs https://www.rabbitmq.com/kubernetes/operator/install-operator.html#helm-chart there is a reference to the bitnami Helm chart https://bitnami.com/stack/rabbitmq-cluster-operator/helm. We can install it using our own custom `Chart.yaml` to pin the version ([as described here](https://stackoverflow.com/questions/71765471/helm-how-to-pin-version-make-it-manageable-by-renovate-on-github/71765472#71765472)) in order to make this managable via Renovate bot. The `Chart.yaml` resides in `rabbitmq/install`:
+
+```yaml
+apiVersion: v2
+type: application
+name: rabbitmq-cluster-operator
+version: 0.0.0 # unused
+appVersion: 0.0.0 # unused
+dependencies:
+  - name: rabbitmq-cluster-operator
+    repository: https://charts.bitnami.com/bitnami
+    version: 3.2.7
+```
+
+Now we can install the RabbitMQ cluster operator with the following commands:
 
 ```shell
-
+helm dependency update rabbitmq/install
+helm upgrade -i rabbitmq-cluster-operator rabbitmq/install
 ```
 
 
-
-
-There are 3 steps to take:
-
-### 1. Install Operator Lifecycle Manager (OLM)
+### 2. Watch operator starting up
 
 ```shell
-curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.24.0/install.sh | bash -s v0.24.0
-```
-
-### 2. Install the operator
-
-```shell
-kubectl create -f https://operatorhub.io/install/rabbitmq-cluster-operator.yaml
-```
-
-### 3. Watch operator starting up
-
-```shell
-kubectl get csv -n operators
-
-kubectl wait --for=condition=Succeeded pod -l app=tekton-pipelines-controller --namespace default --timeout=120s
+kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s
 ```
