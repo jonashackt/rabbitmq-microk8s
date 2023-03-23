@@ -1,4 +1,9 @@
 # rabbitmq-microk8s
+[![Build Status](https://github.com/jonashackt/rabbitmq-microk8s/workflows/provision/badge.svg)](https://github.com/jonashackt/rabbitmq-microk8s/actions)
+[![License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/jonashackt/rabbitmq-microk8s/blob/main/LICENSE)
+[![renovateenabled](https://img.shields.io/badge/renovate-enabled-yellow)](https://renovatebot.com)
+[![Configured with Kustomize](https://img.shields.io/badge/configured_by-Kustomize-455EA3.svg?logo=kubernetes&logoColor=455EA3)](https://kustomize.io/)
+
 Example project showing how to run RabbitMQ on MicroK8s
 
 
