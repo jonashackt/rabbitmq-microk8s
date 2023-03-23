@@ -278,6 +278,28 @@ microk8s enable host-access
 ```
 
 
+## Access the RabbitMQ management UI
+
+Extract the `username` and `password` prior to accessing the management UI via:
+
+```shell
+username="$(kubectl get secret hello-rabbit-default-user -o jsonpath='{.data.username}' | base64 --decode)"
+echo "username: $username"
+password="$(kubectl get secret hello-rabbit-default-user -o jsonpath='{.data.password}' | base64 --decode)"
+echo "password: $password"
+```
+
+Now create a port forwarding and open your Browser at http://localhost:15672:
+
+```shell
+kubectl port-forward "service/hello-rabbit" 15672
+```
+
+Finally the management UI should be available to us:
+
+![rabbitmq-management-ui.png](docs/screenshots/rabbitmq-management-ui.png)
+
+
 # Links
 
 https://www.infracloud.io/blogs/setup-rabbitmq-ha-mode-kubernetes-operator/
