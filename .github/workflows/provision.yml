@@ -16,7 +16,6 @@ jobs:
 
           echo "Preventing need for sudo when using microk8s command"
           sudo usermod -a -G microk8s runner
-          sudo chown -R runner ~/.kube
       
       - name: Enable microk8s addons
         run: microk8s enable hostpath-storage dns host-access 
