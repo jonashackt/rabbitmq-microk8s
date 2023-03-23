@@ -416,6 +416,10 @@ jobs:
           until curl -u$username:$password localhost:15672/api/overview --connect-timeout 30; do : ; sleep 3; done
 ```
 
+# Next steps
+
+Creating a HA setup using multiple (3) replicas of RabbitMQ like in this example https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples/production-ready which should be based on a 3 nodes MicroK8s setup (https://microk8s.io/docs/high-availability).
+
 
 # Links
 
