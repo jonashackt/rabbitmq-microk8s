@@ -27,15 +27,15 @@ jobs:
           helm upgrade -i rabbitmq-cluster-operator rabbitmq/install
 
           echo "Watch operator starting up - wrapped in until to prevent 'error: no matching resources found'"
-          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s; do : ; done
+          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s; do : ; sleep 5; done
 
-      - name: "Install RabbitMQ - wrapped in until to prevent 'error: no matching resources found'"
+      - name: Install RabbitMQ
         run: |
           echo "Install CRDs via Kustomize"
           kubectl apply -k rabbitmq
 
-          echo "Watch RabbitMQ coming up"
-          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=hello-rabbit --namespace default --timeout=120s; do : ; done
+          echo "Watch RabbitMQ coming up - wrapped in until to prevent 'error: no matching resources found'"
+          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=hello-rabbit --namespace default --timeout=120s; do : ; sleep 5; done
 
       - name: Check if the RabbitMQ management UI is accessible
         run: |
@@ -47,4 +47,4 @@ jobs:
           kubectl port-forward "service/hello-rabbit" 15672 &
 
           echo "Access the management UI via curl"
-          curl -u$username:$password localhost:15672/api/overview
+          curl -u$username:$password localhost:15672/api/overview --connect-timeout 30
