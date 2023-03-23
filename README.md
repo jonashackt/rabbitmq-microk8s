@@ -2,6 +2,8 @@
 Example project showing how to run RabbitMQ on MicroK8s
 
 
+# Setup MicroK8s
+
 ## Install MicroK8s
 
 On Linux - especially Ubuntu - installation of MicroK8s is super easy: https://microk8s.io/docs/getting-started
@@ -12,7 +14,7 @@ If you're on a Mac, then [the following steps apply](https://microk8s.io/docs/in
 brew install ubuntu/microk8s/microk8s
 ```
 
-On MacOS MicroK8s is based on [Multipass](https://multipass.run/), which manages and runs Ubuntu VMs on every OS' native hypervisor (for Mac this is QEMU and HyperKit). So the next command will prompt you to download Multipass:
+On MacOS MicroK8s is based on [Multipass](https://multipass.run/), which manages and runs Ubuntu VMs on every OS' native hypervisor (for Mac this is QEMU and HyperKit). So the next command will prompt you to download & install Multipass:
 
 ```shell
 microk8s install
@@ -27,10 +29,10 @@ microk8s-integrator-macos 0.1 from Canonical✓ installed
 MicroK8s is up and running. See the available commands with `microk8s --help`.
 ```
 
-Now we should turn on some services that we need:
+You can even log into the Multipass vm via:
 
 ```shell
-microk8s enable dns
+multipass shell microk8s-vm
 ```
 
 ## Access MicroK8s
@@ -78,7 +80,43 @@ users:
 You shouldn't override them!
 
 
+## Enable MicroK8s Addons
 
+At first have a look at the already enabled addons in MicroK8s:
+
+```shell
+microk8s status
+```
+
+Only the following addons are pre-installed in MicroK8s:
+    api-server
+    controller-manager
+    scheduler
+    kubelet
+    cni
+    kube-proxy
+
+> While this does deliver a pure Kubernetes experience with the smallest resource footprint possible, there are situations where you may require additional services. MicroK8s caters for this with the concept of “Addons” - extra services which can easily be added to MicroK8s. These addons can be enabled and disabled at any time, and most are pre-configured to ‘just work’ without any further set up.
+
+To get more functionalities see https://microk8s.io/docs/addons for the full list of addons
+
+In order to have a simple solution for `PersistenVolumes` our RabbitMQ cluster needs, we should enable the `hostpath-storage` addon:
+
+```shell
+microk8s enable hostpath-storage dns
+```
+
+> The hostpath storage MicroK8s add-on can be used to easily provision PersistentVolumes backed by a host directory. It is ideal for local development
+
+Also we [should enable DNS](https://microk8s.io/docs/addon-dns) to prevent the following error:
+
+```shell
+  Warning  MissingClusterDNS  10s (x4 over 35s)  kubelet            pod: "hello-rabbit-server-0_default(c506abbb-68bf-4582-b288-fd4a2a3dc0c5)". kubelet does not have ClusterDNS IP configured and cannot create Pod using "ClusterFirst" policy. Falling back to "Default" policy.
+```
+
+
+
+# RabbitMQ
 
 
 ## Install RabbitMQ cluster operator
@@ -155,3 +193,91 @@ helm upgrade -i rabbitmq-cluster-operator rabbitmq/install
 ```shell
 kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s
 ```
+
+
+
+## Create RabbitMQ Cluster
+
+### 1. Craft RabbitmqCluster CRD
+
+As https://www.rabbitmq.com/kubernetes/operator/quickstart-operator.html suggests we can now start creating our first hello world RabbitMQ cluster using the `RabbitmqCluster` CRD:
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+    name: hello-rabbit
+```
+
+See the following examples https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples/ to enhance the setup for TLS, production defaults and more.
+
+
+### 2. Install CRS via Kustomize
+
+The [K8s config management tool Kustomize](https://kustomize.io/) helps us installing our CRD. First we need to create a [kustomization.yaml](rabbitmq/kustomization.yaml):
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - hello-rabbit.yaml
+```
+
+Now we can simply install the CRD into our cluster via:
+
+```shell
+kubectl apply -k rabbitmq
+```
+
+Watch things coming up with
+
+```shell
+watch kubectl get all
+```
+
+To debug your setup use the following and have a look into the Events:
+
+```shell
+kubectl describe po hello-rabbit-server-0
+```
+
+Or try one of the following hints
+
+```shell
+# view CRD status
+kubectl get rabbitmqclusters.rabbitmq.com
+
+# view logs
+kubectl logs hello-world-server-0
+```
+
+
+### Tackling Readiness probe failed: dial tcp 10.1.254.78:5672: connect: connection refused
+
+```shell
+Events:
+  Type     Reason     Age   From               Message
+  ----     ------     ----  ----               -------
+  Normal   Scheduled  53s   default-scheduler  Successfully assigned default/hello-rabbit-server-0 to microk8s-vm
+  Normal   Pulled     52s   kubelet            Container image "docker.io/bitnami/rabbitmq:3.10.19-debian-11-r4" already present on machine
+  Normal   Created    52s   kubelet            Created container setup-container
+  Normal   Started    52s   kubelet            Started container setup-container
+  Normal   Pulled     21s   kubelet            Container image "docker.io/bitnami/rabbitmq:3.10.19-debian-11-r4" already present on machine
+  Normal   Created    21s   kubelet            Created container rabbitmq
+  Normal   Started    21s   kubelet            Started container rabbitmq
+  Warning  Unhealthy  3s    kubelet            Readiness probe failed: dial tcp 10.1.254.78:5672: connect: connection refused
+```
+
+Seems that we don't get a connection https://stackoverflow.com/questions/74538398/k8s-readiness-probes-working-in-gke-not-in-microk8s-on-macos
+
+All we need to do is to enable [the `host-access` plugin](https://microk8s.io/docs/addon-host-access) in Microk8s (see [this so answer](https://stackoverflow.com/a/75821978/4964553)):
+
+```shell
+microk8s enable host-access
+```
+
+
+# Links
+
+https://www.infracloud.io/blogs/setup-rabbitmq-ha-mode-kubernetes-operator/
