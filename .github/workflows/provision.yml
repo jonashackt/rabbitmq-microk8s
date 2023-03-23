@@ -21,6 +21,10 @@ jobs:
           sudo microk8s config > ~/.kube/config
           sudo chown -R runner ~/.kube
 
+          echo "Configure firewall to allow pod-to-pod and pod-to-internet communication, see https://ubuntu.com/tutorials/install-a-local-kubernetes-with-microk8s#2-deploying-microk8s"
+          sudo ufw allow in on cni0 && sudo ufw allow out on cni0
+          sudo ufw default allow routed
+
           echo "Check access to mikrok8s cluster"
           kubectl get nodes
       
