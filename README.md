@@ -386,24 +386,34 @@ jobs:
           echo "Check access to mikrok8s cluster"
           kubectl get nodes
       
-      - name: Install RabbitMQ using Helm
+      - name: Install RabbitMQ cluster operator
         run: |
-          echo "Install RabbitMQ using our chart with pinned version"
+          echo "Install RabbitMQ using our Helm chart with pinned version"
           helm dependency update rabbitmq/install
           helm upgrade -i rabbitmq-cluster-operator rabbitmq/install
 
-          echo "Watch operator starting up - wrapped in until to prevent 'error: no matching resources found'"
-          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s; do : ; done
+          echo "Watch operator starting up - wrapped in until to prevent 'error: no matching resources found' from stopping the pipeline"
+          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s; do : ; sleep 5; done
 
-      - name: Install CRDs via Kustomize
+      - name: Install RabbitMQ
         run: |
+          echo "Install CRDs via Kustomize"
           kubectl apply -k rabbitmq
 
-          echo "Watch RabbitMQ coming up"
-          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=hello-rabbit --namespace default --timeout=120s
+          echo "Watch RabbitMQ coming up - wrapped in until to prevent 'error: no matching resources found' from stopping the pipeline"
+          until kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=hello-rabbit --namespace default --timeout=120s; do : ; sleep 5; done
 
+      - name: Check if the RabbitMQ management UI is accessible
+        run: |
+          echo "Extract username and password for RabbitMQ management UI"
+          username="$(kubectl get secret hello-rabbit-default-user -o jsonpath='{.data.username}' | base64 --decode)"
+          password="$(kubectl get secret hello-rabbit-default-user -o jsonpath='{.data.password}' | base64 --decode)"
 
+          echo "Create port forwarding to the management UI (in background using '&' at the end to not block the terminal session)"
+          kubectl port-forward "service/hello-rabbit" 15672 &
 
+          echo "Access the management UI via curl"
+          until curl -u$username:$password localhost:15672/api/overview --connect-timeout 30; do : ; sleep 3; done
 ```
 
 
