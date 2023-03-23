@@ -293,11 +293,53 @@ Now create a port forwarding and open your Browser at http://localhost:15672:
 
 ```shell
 kubectl port-forward "service/hello-rabbit" 15672
+
+# or use rabbitmq kubectl plugin
+kubectl rabbitmq manage hello-rabbit
 ```
 
 Finally the management UI should be available to us:
 
 ![rabbitmq-management-ui.png](docs/screenshots/rabbitmq-management-ui.png)
+
+
+
+## Connecting an app to the cluster using perf-test load testing library
+
+There's a great load testing application https://github.com/rabbitmq/rabbitmq-perf-test which is broadly used to test RabbitMQ installs. You can run it via the following commands:
+
+```shell
+username="$(kubectl get secret hello-rabbit-default-user -o jsonpath='{.data.username}' | base64 --decode)"
+password="$(kubectl get secret hello-rabbit-default-user -o jsonpath='{.data.password}' | base64 --decode)"
+service="$(kubectl get service hello-rabbit -o jsonpath='{.spec.clusterIP}')"
+
+kubectl run perf-test --image=pivotalrabbitmq/perf-test -- --uri amqp://$username:$password@$service
+```
+
+Now follow the logs with
+
+```shell
+kubectl logs --follow perf-test
+```
+
+Now you can see the messages also flowing inside the management ui:
+
+![](docs/screenshots/rabbitmq-management-ui-perftest.png)
+
+But remember to stop the performance test again! Because 
+
+> perf-test is able to produce and consume about 25,000 messages per second.
+
+So this will really get your cluster to the limits :)
+
+Stop it with
+
+```shell
+kubectl delete po perf-test
+
+# or if you used the rabbitmq kubectl command
+kubectl delete job.batch perf-test
+```
 
 
 # Links
