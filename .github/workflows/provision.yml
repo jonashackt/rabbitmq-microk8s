@@ -14,20 +14,18 @@ jobs:
           echo "Install microk8s using snap"
           sudo snap install microk8s --classic
 
-          echo "Preventing need for sudo when using microk8s command"
-          sudo usermod -a -G microk8s runner
-      
-      - name: Enable microk8s addons
-        run: microk8s enable hostpath-storage dns host-access 
-
-      - name: Configure kubectl & check cluster access
-        run: |
           echo "Create ~/.kube dir only, if not already existent (see https://stackoverflow.com/a/793867/4964553)"
           mkdir -p ~/.kube
 
           echo "Create kubeconfig and supply it for depending Action jobs"
-          microk8s config > ~/.kube/config
+          sudo microk8s config > ~/.kube/config
+          sudo chown -R runner ~/.kube
 
           echo "Check access to mikrok8s cluster"
           kubectl get nodes
+      
+      - name: Enable microk8s addons
+        run: sudo microk8s enable hostpath-storage dns host-access 
+
+
 
