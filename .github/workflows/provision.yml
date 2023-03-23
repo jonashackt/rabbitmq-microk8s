@@ -47,4 +47,4 @@ jobs:
           kubectl port-forward "service/hello-rabbit" 15672 &
 
           echo "Access the management UI via curl"
-          curl -u$username:$password localhost:15672/api/overview --connect-timeout 30
+          until curl -u$username:$password localhost:15672/api/overview --connect-timeout 30; do : ; sleep 3; done
