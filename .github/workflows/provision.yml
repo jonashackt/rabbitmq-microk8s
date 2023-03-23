@@ -9,27 +9,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Install microk8s & configure GitHub Actions Runner user for access
+      - uses: balchua/microk8s-actions@v0.3.0
+        with:
+          channel: '1.26/stable'
+          addons: '["dns", "host-access", "hostpath-storage"]'
+
+      - name: Access microk8s
         run: |
-          echo "Install microk8s using snap"
-          sudo snap install microk8s --classic
-
-          echo "Create ~/.kube dir only, if not already existent (see https://stackoverflow.com/a/793867/4964553)"
-          mkdir -p ~/.kube
-
-          echo "Create kubeconfig and supply it for depending Action jobs"
-          sudo microk8s config > ~/.kube/config
-          sudo chown -R runner ~/.kube
-
-          echo "Configure firewall to allow pod-to-pod and pod-to-internet communication, see https://ubuntu.com/tutorials/install-a-local-kubernetes-with-microk8s#2-deploying-microk8s"
-          sudo ufw allow in on cni0 && sudo ufw allow out on cni0
-          sudo ufw default allow routed
-
           echo "Check access to mikrok8s cluster"
           kubectl get nodes
-      
-      - name: Enable microk8s addons
-        run: sudo microk8s enable hostpath-storage dns host-access 
+
 
 
 
