@@ -10,7 +10,7 @@ jobs:
         uses: actions/checkout@master
 
       - name: Install microk8s
-        run: sudo snap install microk8s --classic
+        run: snap install microk8s --classic
       
       - name: Enable microk8s addons
         run: microk8s enable hostpath-storage dns host-access 
