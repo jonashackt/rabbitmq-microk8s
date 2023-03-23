@@ -1,0 +1,28 @@
+name: provision
+
+on: [push]
+
+jobs:
+  microk8s-rabbitmq:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Install microk8s
+        run: sudo snap install microk8s --classic
+      
+      - name: Enable microk8s addons
+        run: microk8s enable hostpath-storage dns host-access 
+
+      - name: Configure kubectl & check cluster access
+        run: |
+          echo "Create ~/.kube dir only, if not already existent (see https://stackoverflow.com/a/793867/4964553)"
+          mkdir -p ~/.kube
+
+          echo "Create kubeconfig and supply it for depending Action jobs"
+          microk8s config > ~/.kube/config
+
+          echo "Check access to mikrok8s cluster"
+          kubectl get nodes
+
