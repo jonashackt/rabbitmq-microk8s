@@ -423,4 +423,26 @@ Creating a HA setup using multiple (3) replicas of RabbitMQ like in this example
 
 # Links
 
+https://www.rabbitmq.com/kubernetes/operator/quickstart-operator.html
+
+https://www.rabbitmq.com/kubernetes/operator/operator-overview.html
+
+https://blog.rabbitmq.com/posts/2020/08/deploying-rabbitmq-to-kubernetes-whats-involved/
+
+### Clustering and HA
+
+https://microk8s.io/docs/clustering
+
+https://microk8s.io/high-availability
+
+https://microk8s.io/docs/high-availability
+
 https://www.infracloud.io/blogs/setup-rabbitmq-ha-mode-kubernetes-operator/
+
+https://blog.rabbitmq.com/posts/2020/07/disaster-recovery-and-high-availability-101/
+
+https://www.rabbitmq.com/quorum-queues.html
+
+### Monitoring Prometheus
+
+https://www.rabbitmq.com/prometheus.html
