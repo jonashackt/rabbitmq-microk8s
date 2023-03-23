@@ -9,7 +9,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - uses: balchua/microk8s-actions@v0.3.0
+      - name: Install microk8s using actions/microk8s-action
+        uses: balchua/microk8s-actions@v0.3.0
         with:
           channel: '1.26/stable'
           addons: '["dns", "host-access", "hostpath-storage"]'
@@ -18,6 +19,15 @@ jobs:
         run: |
           echo "Check access to mikrok8s cluster"
           kubectl get nodes
+      
+      - name: Install RabbitMQ using Helm
+        run: |
+          echo "Install RabbitMQ using our chart with pinned version"
+          helm dependency update rabbitmq/install
+          helm upgrade -i rabbitmq-cluster-operator rabbitmq/install
+
+          echo "Watch operator starting up"
+          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=rabbitmq-cluster-operator,app.kubernetes.io/instance=rabbitmq-cluster-operator --namespace default --timeout=120s
 
 
 
