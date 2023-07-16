@@ -6,4 +6,4 @@ appVersion: 0.0.0 # unused
 dependencies:
   - name: rabbitmq-cluster-operator
     repository: https://charts.bitnami.com/bitnami
-    version: 3.6.0
+    version: 3.6.1
