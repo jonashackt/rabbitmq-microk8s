@@ -10,7 +10,7 @@ jobs:
         uses: actions/checkout@master
 
       - name: Install microk8s using actions/microk8s-action
-        uses: balchua/microk8s-actions@v0.3.2
+        uses: balchua/microk8s-actions@1e8e626239c2befe7cd5d258c96ae152a7259c74 # v0.4.0
         with:
           channel: '1.26/stable'
           addons: '["dns", "host-access", "hostpath-storage"]'
